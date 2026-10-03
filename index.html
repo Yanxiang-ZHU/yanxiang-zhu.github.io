@@ -1,914 +1,885 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>祝彦翔 - 个人网站</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family:
-                "Times New Roman", Times, serif,
-                "宋体", SimSun, "STSong", "NSimSun", serif;
-            color: #23272f;
-            line-height: 1.7;
-            background: linear-gradient(135deg, #f5faff 0%, #e6f0ff 100%);
-            min-height: 100vh;
-            font-size: 1.2rem;
-        }
-        .logo, #hero h1, h2, nav a, .skills-card h3, .research-card h3,
-        #hero p, .skills-card, .research-card, .project-card, .skills-subtitle, .skills-card li, .research-list li, .research-desc, .research-supervisor, .research-link, .awards-btn, .language-switcher button {
-            font-family:
-                "Times New Roman", Times, serif,
-                "宋体", SimSun, "STSong", "NSimSun", serif;
-        }
-        .skills-card,
-        .research-card
-        {
-            font-size: 1.2rem;
-        }
-        .project-card {
-            font-size: 1.2rem;
-        }
-        .skills-card li,
-        .research-list li,
-        .research-desc,
-        .research-supervisor,
-        .research-link {
-            font-size: 1.2rem;
-        }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.2rem 3.5vw 1.2rem 3.5vw;
-            background: rgba(255,255,255,0.97);
-            box-shadow: 0 2px 12px rgba(0,123,255,0.07);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 2px solid #e0eaff;
-        }
-        .logo {
-            font-size: 2.1rem;
-            font-weight: 800;
-            color: #007bff;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 8px rgba(0,123,255,0.08);
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            flex-shrink: 0;
-        }
-        .header-right {
-            display: flex;
-            align-items: center;
-            flex: 1 1 auto;
-            justify-content: flex-end;
-            min-width: 0;
-        }
-        nav {
-            flex: 1 1 auto;
-            display: flex;
-            justify-content: flex-end;
-            min-width: 0;
-        }
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 2.2rem;
-            align-items: center;
-            min-width: 0;
-            flex-wrap: nowrap;
-        }
-        nav li {
-            min-width: 0;
-        }
-        nav a {
-            text-decoration: none;
-            color: #23272f;
-            font-weight: 600;
-            font-size: 1.06rem;
-            padding: 0.4rem 1.1rem;
-            border-radius: 18px;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-            white-space: nowrap;
-            letter-spacing: 0.5px;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            display: inline-block;
-        }
-        nav a:hover, nav a.active {
-            background: linear-gradient(90deg,#007bff 60%,#00c6ff 100%);
-            color: #fff;
-            box-shadow: 0 2px 8px rgba(0,123,255,0.10);
-        }
-        .language-switcher {
-            display: flex;
-            gap: 0.5rem;
-            margin-left: 2.5rem;
-            flex-shrink: 0;
-        }
-        .language-switcher button {
-            padding: 0.45rem 1.1rem;
-            border: none;
-            background-color: #e0e0e0;
-            cursor: pointer;
-            border-radius: 7px;
-            font-weight: 600;
-            font-size: 1.02rem;
-            transition: background 0.3s, color 0.3s;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        }
-        .language-switcher button.active {
-            background: linear-gradient(90deg,#007bff 60%,#00c6ff 100%);
-            color: #fff;
-        }
-        main {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 3.5rem 2.5vw 2.5rem 2.5vw;
-        }
-        section {
-            margin-bottom: 4rem;
-        }
-        @keyframes float {
-            0% { transform: translateY(0);}
-            100% { transform: translateY(-18px);}
-        }
-        #hero {
-            position: relative;
-            min-height: 480px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 2.5rem;
-            overflow: hidden;
-        }
-        #hero-bg-gradient {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-            pointer-events: none;
-            background: radial-gradient(ellipse 80% 60% at 50% 30%, #b3e0ff 0%, #e6f0ff 60%, #fff 100%);
-        }
-        #hero-bg-svg {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
-            pointer-events: none;
-        }
-        #hero-content {
-            position: relative;
-            z-index: 2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 2.5rem;
-        }
-        #hero img {
-            width: 170px;
-            height: 170px;
-            object-fit: cover;
-            border-radius: 50%;
-            box-shadow: 0 8px 32px rgba(0,123,255,0.18);
-            margin-bottom: 2.2rem;
-            animation: float 3s ease-in-out infinite alternate;
-            border: 6px solid #fff;
-        }
-        #hero h1 {
-            font-size: 2.7rem;
-            margin-bottom: 1.1rem;
-            letter-spacing: 2px;
-            font-weight: 800;
-            color: #007bff;
-            text-shadow: 0 2px 8px rgba(0,123,255,0.08);
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        }
-        #hero p {
-            font-size: 1.35rem;
-            color: #23272f;
-            font-weight: 500;
-            margin-bottom: 0;
-            background: rgba(255,255,255,0.8);
-            padding: 0.7rem 1.5rem;
-            border-radius: 18px;
-            box-shadow: 0 2px 8px rgba(0,123,255,0.06);
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        }
-        h2 {
-            font-size: 1.7rem;
-            margin-bottom: 1.5rem;
-            color: #007bff;
-            border-bottom: 2px solid #007bff;
-            display: inline-block;
-            background: linear-gradient(90deg,#e6f0ff 60%,#fff 100%);
-            padding: 0 1.2rem 0.2rem 0;
-            border-radius: 0 0 12px 0;
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            font-weight: 700;
-        }
-        ul { list-style: none; }
-        ul li { margin-bottom: 1rem; }
-        a { color: #007bff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        footer {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255,255,255,0.95);
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.07);
-            font-weight: 500;
-            font-size: 1.20rem;
-            letter-spacing: 1px;
-        }
-        html { scroll-behavior: smooth; }
-        .projects-flex {
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .project-card {
-            background: rgba(255,255,255,0.92);
-            border-radius: 18px;
-            box-shadow: 0 4px 32px rgba(0,123,255,0.10);
-            border: 1.5px solid rgba(0,123,255,0.08);
-            padding: 2rem 1.5rem 1.5rem 1.5rem;
-            flex: 1 1 200px;
-            min-width: 200px;
-            max-width: 48%;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-            align-items: flex-start;
-            transition: transform 0.25s cubic-bezier(.4,2,.6,1), box-shadow 0.25s;
-            position: relative;
-            overflow: hidden;
-        }
-        .project-card:hover {
-            transform: translateY(-8px) scale(1.025);
-            box-shadow: 0 8px 40px rgba(0,123,255,0.18);
-            border-color: #007bff33;
-        }
-        .project-card .project-icon {
-            font-size: 2.2rem;
-            margin-bottom: 0.5rem;
-            color: #00b894;
-            filter: drop-shadow(0 2px 8px #b3e0ff);
-        }
-        .project-card h4 {
-            font-size: 1.13rem;
-            color: #007bff;
-            font-weight: 700;
-            margin-bottom: 0.4rem;
-            letter-spacing: 0.5px;
-        }
-        .project-card .project-link {
-            margin-top: 0.8rem;
-            display: inline-block;
-            background: linear-gradient(90deg,#007bff 60%,#00c6ff 100%);
-            color: #fff;
-            padding: 0.4rem 1.2rem;
-            border-radius: 20px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: background 0.2s;
-            box-shadow: 0 1px 4px rgba(0,123,255,0.10);
-            font-size: 1.01rem;
-            letter-spacing: 0.5px;
-            border: none;
-        }
-        .project-card .project-link:hover {
-            background: linear-gradient(90deg,#0056b3 60%,#00c6ff 100%);
-        }
-        .skills-flex {
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .skills-card {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(8px);
-            border-radius: 18px;
-            box-shadow: 0 4px 32px rgba(0,123,255,0.10);
-            transition: transform 0.25s cubic-bezier(.4,2,.6,1), box-shadow 0.25s;
-            border: 1.5px solid rgba(0,123,255,0.08);
-            padding: 2rem 2rem 1.5rem 2rem;
-            flex: 1 1 350px;
-            min-width: 320px;
-            max-width: 48%;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-        }
-        .skills-card:hover {
-            transform: translateY(-8px) scale(1.025);
-            box-shadow: 0 8px 40px rgba(0,123,255,0.18);
-            border-color: #007bff33;
-        }
-        .skills-card h3 {
-            color: #007bff;
-            font-size: 1.18rem;
-            margin-bottom: 0.5rem;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 0.3rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .skills-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-        }
-        .skills-subgroup {
-            margin-bottom: 0.5rem;
-        }
-        .skills-subtitle {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 0.3rem;
-            font-size: 1.2rem;
-        }
-        .skills-card ul {
-            margin-left: 1.2rem;
-            margin-bottom: 0.2rem;
-        }
-        .skills-card li {
-            margin-bottom: 0.3rem;
-            line-height: 1.7;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .skill-tag {
-            display: inline-block;
-            margin-left: 8px;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 600;
-            background: linear-gradient(90deg,#007bff 60%,#00c6ff 100%);
-            color: #fff;
-            box-shadow: 0 1px 4px rgba(0,123,255,0.10);
-            letter-spacing: 1px;
-        }
-        .skill-tag.master { background: linear-gradient(90deg,#007bff 60%,#00c6ff 100%);}
-        .skill-tag.good { background: linear-gradient(90deg,#00b894 60%,#00c6ff 100%);}
-        .awards-btn {
-            display: inline-block;
-            margin-top: 1.2rem;
-            background: linear-gradient(90deg,#007bff 60%,#00c6ff 100%);
-            color: #fff;
-            padding: 0.6rem 2rem;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 1.20rem;
-            letter-spacing: 1px;
-            box-shadow: 0 2px 8px rgba(0,123,255,0.10);
-            border: none;
-            transition: background 0.2s, transform 0.2s;
-            text-decoration: none;
-        }
-        .awards-btn:hover {
-            background: linear-gradient(90deg,#0056b3 60%,#00c6ff 100%);
-            transform: translateY(-2px) scale(1.04);
-        }
-        .research-flex {
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            justify-content: space-between;
-        }
-        .research-card {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(8px);
-            border-radius: 18px;
-            box-shadow: 0 4px 32px rgba(0,123,255,0.10);
-            transition: transform 0.25s cubic-bezier(.4,2,.6,1), box-shadow 0.25s;
-            border: 1.5px solid rgba(0,123,255,0.08);
-            padding: 2rem 2rem 1.5rem 2rem;
-            flex: 1 1 350px;
-            min-width: 320px;
-            max-width: 48%;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.2rem;
-        }
-        .research-card:hover {
-            transform: translateY(-8px) scale(1.025);
-            box-shadow: 0 8px 40px rgba(0,123,255,0.18);
-            border-color: #007bff33;
-        }
-        .research-card h3 {
-            color: #007bff;
-            font-size: 1.13rem;
-            margin-bottom: 0.7rem;
-            border-bottom: 1px solid #e0e0e0;
-            padding-bottom: 0.3rem;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .research-list {
-            margin-left: 1.2rem;
-            margin-bottom: 0.2rem;
-        }
-        .research-list li {
-            margin-bottom: 0.5rem;
-            line-height: 1.7;
-            font-size: 1.20rem;
-        }
-        .research-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.7rem;
-        }
-        .research-topic {
-            font-weight: 600;
-            color: #007bff;
-            font-size: 1.20rem;
-        }
-        .research-desc {
-            color: #333;
-            font-size: 1.20rem;
-        }
-        .research-supervisor {
-            color: #666;
-            font-size: 1.20rem;
-        }
-        .research-link {
-            color: #007bff;
-            font-size: 1.20rem;
-        }
-        @media (max-width: 1100px) {
-            main {
-                max-width: 98vw;
-                padding-left: 2vw;
-                padding-right: 2vw;
-            }
-        }
-        @media (max-width: 900px) {
-            .skills-flex, .research-flex, .projects-flex {
-                flex-direction: column;
-                gap: 1.5rem;
-            }
-            .skills-card, .research-card, .project-card {
-                max-width: 100%;
-                min-width: unset;
-            }
-            header {
-                flex-direction: column;
-                padding: 1.20rem 0.5rem;
-            }
-            .header-right, nav {
-                width: 100%;
-                justify-content: center;
-            }
-            nav ul {
-                flex-direction: column;
-                align-items: center;
-                gap: 1rem;
-            }
-            main {
-                padding: 1.5rem 0.5rem;
-            }
-            .language-switcher {
-                margin-left: 0;
-                margin-top: 1.20rem;
-            }
-        }
-        @media (max-width: 600px) {
-            #hero h1 { font-size: 1.45rem; }
-            #hero p { font-size: 1.2rem; }
-            .logo { font-size: 1.2rem; }
-            h2 { font-size: 1.2rem; }
-            main { padding-left: 1.2rem; padding-right: 1.2rem; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yanxiang Zhu — Digital IC Design & AI Hardware</title>
+<meta name="description" content="Yanxiang Zhu (祝彦翔) — M.S. Electrical Engineering at Columbia University. Digital IC design, FPGA acceleration, and hardware-software co-design for AI systems.">
+<meta property="og:title" content="Yanxiang Zhu — Digital IC Design & AI Hardware">
+<meta property="og:description" content="M.S. student in Electrical Engineering at Columbia University. Digital IC design, FPGA acceleration, and hardware-software co-design for AI systems.">
+<meta property="og:image" content="https://yanxiang-zhu.github.io/assets/photo.jpg">
+<link rel="canonical" href="https://yanxiang-zhu.github.io/">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Yanxiang Zhu","alternateName":"祝彦翔","url":"https://yanxiang-zhu.github.io/","image":"https://yanxiang-zhu.github.io/assets/photo.jpg","email":"mailto:yz5479@columbia.edu","alumniOf":[{"@type":"CollegeOrUniversity","name":"Fudan University"},{"@type":"CollegeOrUniversity","name":"Columbia University"}],"knowsAbout":["Digital IC design","FPGA acceleration","Computer architecture","AI hardware"],"sameAs":["https://github.com/Yanxiang-ZHU","https://www.linkedin.com/in/yanxiang-zhu"]}</script>
+<meta name="theme-color" content="#12324f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2312324f'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='36' fill='%23f5f7fa' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --ink: #1c2733;
+    --ink-soft: #46586b;
+    --muted: #6b7c8f;
+    --accent: #12324f;
+    --accent-2: #2c6ba8;
+    --bg: #ffffff;
+    --bg-soft: #f5f7fa;
+    --line: #e2e8f0;
+    --card-line: #e6ebf1;
+    --max: 1020px;
+    --serif: Georgia, "Times New Roman", "Songti SC", serif;
+    --sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.72;
+    font-size: 16.5px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent-2); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  img { display: block; max-width: 100%; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px;
+  }
+  .brand {
+    font-family: var(--serif);
+    font-size: 1.22rem; font-weight: 700; letter-spacing: 0.2px;
+    color: var(--accent); text-decoration: none;
+  }
+  .brand:hover { text-decoration: none; }
+  .brand span { color: var(--muted); font-weight: 400; }
+  nav ul { list-style: none; display: flex; gap: 21px; }
+  nav a {
+    color: var(--ink-soft); font-size: 0.92rem; font-weight: 600;
+    letter-spacing: 0.2px; text-decoration: none; padding: 4px 2px;
+    border-bottom: 2px solid transparent;
+  }
+  nav a:hover { color: var(--accent); text-decoration: none; }
+  nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .menu-btn {
+    display: none; background: none; border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 11px; cursor: pointer; color: var(--ink);
+    font-size: 0.95rem;
+  }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 72px 0 64px; }
+  .hero-grid {
+    display: grid; grid-template-columns: 210px 1fr; gap: 52px; align-items: center;
+  }
+  .photo {
+    width: 210px; height: 262px; object-fit: cover;
+    border-radius: 14px;
+    border: 1px solid var(--card-line);
+    box-shadow: 0 18px 40px rgba(18,50,79,0.13);
+  }
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: 2.65rem; line-height: 1.15; letter-spacing: 0.3px;
+    color: var(--accent);
+  }
+  .hero .cn { font-size: 1.05rem; color: var(--muted); font-weight: 400; margin-left: 10px; letter-spacing: 1px; }
+  .hero .role {
+    margin-top: 14px; font-size: 1.12rem; color: var(--ink-soft); font-weight: 600;
+  }
+  .hero .tagline { margin-top: 12px; max-width: 620px; color: var(--ink-soft); }
+  .hero-links { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 9px; font-size: 0.93rem; font-weight: 600;
+    border: 1px solid var(--accent); color: var(--accent);
+    transition: all 0.18s ease; text-decoration: none;
+  }
+  .btn:hover { background: var(--accent); color: #fff; text-decoration: none; }
+  .btn.solid { background: var(--accent); color: #fff; }
+  .btn.solid:hover { background: #1c466e; }
+  .btn.ghost { border-color: var(--card-line); color: var(--ink-soft); }
+  .btn.ghost:hover { border-color: var(--accent); background: transparent; color: var(--accent); }
+
+  /* ---------- sections ---------- */
+  section { padding: 58px 0; }
+  section.soft { background: var(--bg-soft); }
+  .sec-head { margin-bottom: 30px; }
+  .sec-label {
+    font-size: 0.78rem; font-weight: 700; letter-spacing: 2.4px;
+    text-transform: uppercase; color: var(--accent-2);
+  }
+  .sec-head h2 {
+    font-family: var(--serif); font-size: 1.85rem; color: var(--accent);
+    margin-top: 6px; letter-spacing: 0.3px;
+  }
+  .sec-head .rule { width: 46px; height: 3px; background: var(--accent); margin-top: 14px; border-radius: 2px; }
+
+  .prose p { max-width: 850px; color: var(--ink-soft); margin-bottom: 16px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { color: var(--ink); font-weight: 650; }
+
+  /* ---------- news ---------- */
+  .news-list { border-left: 2px solid var(--line); }
+  .news-item {
+    position: relative; padding: 0 0 22px 28px;
+  }
+  .news-item:last-child { padding-bottom: 0; }
+  .news-item::before {
+    content: ""; position: absolute; left: -7px; top: 9px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #fff; border: 2.5px solid var(--accent-2);
+  }
+  .news-item .date {
+    display: inline-block; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px;
+    color: var(--accent-2); text-transform: uppercase; margin-bottom: 2px;
+  }
+  .news-item p { color: var(--ink-soft); max-width: 820px; }
+
+  /* ---------- entries (research / experience / education) ---------- */
+  .entry { padding: 26px 0; border-top: 1px solid var(--line); }
+  .entry:first-of-type { border-top: none; padding-top: 4px; }
+  .entry-top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    gap: 20px; flex-wrap: wrap;
+  }
+  .entry h3 { font-size: 1.14rem; color: var(--ink); font-weight: 700; letter-spacing: 0.1px; }
+  .entry .where { color: var(--accent-2); font-weight: 600; font-size: 0.98rem; margin-top: 3px; }
+  .entry .when {
+    color: var(--muted); font-size: 0.9rem; font-weight: 600; white-space: nowrap;
+    letter-spacing: 0.4px;
+  }
+  .entry ul { margin: 12px 0 0 2px; list-style: none; }
+  .entry li {
+    color: var(--ink-soft); padding-left: 20px; position: relative; margin-bottom: 8px;
+    max-width: 860px;
+  }
+  .entry li::before {
+    content: ""; position: absolute; left: 2px; top: 11px;
+    width: 6px; height: 6px; border-radius: 2px; background: var(--accent-2); opacity: 0.65;
+  }
+  .entry .links { margin-top: 12px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .entry .links a { font-size: 0.92rem; font-weight: 600; }
+
+  /* ---------- projects ---------- */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px; }
+  .filter-btn {
+    padding: 8px 17px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--card-line); background: #fff;
+    color: var(--ink-soft); font-size: 0.9rem; font-weight: 600;
+    font-family: var(--sans); transition: all 0.15s ease;
+  }
+  .filter-btn:hover { border-color: var(--accent-2); color: var(--accent); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cards {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px;
+  }
+  .card {
+    border: 1px solid var(--card-line); border-radius: 13px; overflow: hidden;
+    background: #fff; display: flex; flex-direction: column;
+    transition: box-shadow 0.22s ease, transform 0.22s ease;
+  }
+  .card:hover { box-shadow: 0 16px 36px rgba(18,50,79,0.11); transform: translateY(-3px); }
+  .card-img {
+    height: 168px; overflow: hidden; background: var(--bg-soft);
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--card-line);
+  }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-banner {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #12324f 0%, #2c6ba8 60%, #6ba3d6 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); color: rgba(255,255,255,0.92);
+    font-size: 1.02rem; letter-spacing: 1.5px; text-align: center; padding: 0 18px;
+    font-style: italic;
+  }
+  .card-body { padding: 20px 21px 22px; display: flex; flex-direction: column; flex: 1; }
+  .card-cat {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+    color: var(--accent-2); margin-bottom: 7px;
+  }
+  .card h3 { font-size: 1.08rem; color: var(--ink); line-height: 1.4; font-weight: 700; }
+  .card p { font-size: 0.935rem; color: var(--ink-soft); margin-top: 9px; flex: 1; }
+  .tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+  .tag {
+    font-size: 0.75rem; font-weight: 600; color: var(--muted);
+    background: var(--bg-soft); border: 1px solid var(--card-line);
+    padding: 3px 10px; border-radius: 999px; letter-spacing: 0.2px;
+  }
+  .card-links { margin-top: 15px; display: flex; gap: 16px; }
+  .card-links a { font-size: 0.9rem; font-weight: 650; }
+  .hidden { display: none !important; }
+
+  /* ---------- skills ---------- */
+  .skill-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+  .skill-col h3 {
+    font-family: var(--serif); font-size: 1.13rem; color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .skill-col ul { list-style: none; }
+  .skill-col li {
+    color: var(--ink-soft); padding: 7px 0; border-bottom: 1px dashed var(--line);
+    font-size: 0.96rem;
+  }
+  .skill-col li:last-child { border-bottom: none; }
+
+  /* ---------- honors ---------- */
+  .honor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px 44px; }
+  .honor-block h3 {
+    font-family: var(--serif); font-size: 1.13rem; color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .honor-block ul { list-style: none; }
+  .honor-block li {
+    color: var(--ink-soft); padding: 7px 0 7px 22px; position: relative;
+  }
+  .honor-block li::before {
+    content: ""; position: absolute; left: 2px; top: 16px;
+    width: 7px; height: 7px; border-radius: 50%;
+    border: 2px solid var(--accent-2);
+  }
+  .honor-block li strong { color: var(--ink); font-weight: 650; }
+  .honor-block li .yr { color: var(--muted); font-size: 0.88rem; margin-left: 6px; }
+
+  /* ---------- contact ---------- */
+  .contact {
+    background: var(--accent); color: #eaf1f8; padding: 66px 0;
+  }
+  .contact .sec-label { color: #9fc3e2; }
+  .contact h2 { font-family: var(--serif); font-size: 1.85rem; color: #fff; margin-top: 6px; }
+  .contact .rule { width: 46px; height: 3px; background: #9fc3e2; margin-top: 14px; border-radius: 2px; }
+  .contact p { max-width: 700px; margin-top: 22px; color: #c9dbee; }
+  .contact-links { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .contact-links a {
+    color: #fff; border: 1px solid rgba(255,255,255,0.35);
+    padding: 10px 20px; border-radius: 9px; font-weight: 600; font-size: 0.95rem;
+    transition: all 0.18s ease;
+  }
+  .contact-links a:hover { background: rgba(255,255,255,0.12); text-decoration: none; }
+  footer {
+    background: #0d2439; color: #8fa9bf; padding: 22px 0;
+    font-size: 0.86rem; text-align: center;
+  }
+  footer a { color: #b9d2e6; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 900px) {
+    .cards { grid-template-columns: 1fr; }
+    .skill-grid { grid-template-columns: 1fr; gap: 18px; }
+    .honor-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 760px) {
+    body { font-size: 16px; }
+    .menu-btn { display: block; }
+    nav {
+      display: none; position: absolute; top: 64px; left: 0; right: 0;
+      background: #fff; border-bottom: 1px solid var(--line);
+      padding: 10px 28px 20px;
+    }
+    nav.open { display: block; }
+    nav ul { flex-direction: column; gap: 4px; }
+    nav a { display: block; padding: 10px 2px; }
+    .hero { padding: 46px 0 42px; }
+    .hero-grid { grid-template-columns: 1fr; gap: 28px; }
+    .photo { width: 168px; height: 210px; }
+    .hero h1 { font-size: 2.05rem; }
+    .hero .cn { display: block; margin-left: 0; margin-top: 4px; }
+    .hero-links { display: grid; grid-template-columns: 1fr 1fr; }
+    .hero-links .btn { justify-content: center; }
+    .hero-links .btn.solid { grid-column: 1 / -1; }
+    section { padding: 44px 0; }
+    .entry-top { flex-direction: column; gap: 4px; }
+    .entry .when { white-space: normal; }
+    .wrap { padding: 0 20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .card, .btn, .filter-btn { transition: none; }
+    .card:hover { transform: none; }
+  }
+</style>
 </head>
 <body>
-    <header>
-        <div class="logo" data-i18n="name"></div>
-        <div class="header-right">
-            <nav>
-                <ul>
-                    <li><a href="#about" data-i18n="about"></a></li>
-                    <li><a href="#education" data-i18n="education"></a></li>
-                    <li><a href="#research" data-i18n="research"></a></li>
-                    <li><a href="#projects" data-i18n="projects"></a></li>
-                    <li><a href="#skills" data-i18n="skills"></a></li>
-                    <li><a href="#achievements" data-i18n="achievements"></a></li>
-                    <li><a href="#student-social" data-i18n="student_social"></a></li>
-                    <li><a href="#contact" data-i18n="contact"></a></li>
-                </ul>
-            </nav>
-            <div class="language-switcher">
-                <button onclick="switchLanguage('en')">EN</button>
-                <button onclick="switchLanguage('zh')">ZH</button>
-            </div>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top">Yanxiang Zhu <span>祝彦翔</span></a>
+    <button class="menu-btn" id="menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav id="nav">
+      <ul>
+        <li><a href="#about">About</a></li>
+        <li><a href="#news">News</a></li>
+        <li><a href="#experience">Experience</a></li>
+                <li><a href="#research">Research</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#education">Education</a></li>
+        <li><a href="#honors">Honors</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <img class="photo" src="assets/photo.jpg" alt="Portrait of Yanxiang Zhu">
+      <div>
+        <h1>Yanxiang Zhu<span class="cn">祝彦翔</span></h1>
+        <div class="role">M.S. Electrical Engineering, Columbia University</div>
+        <p class="tagline">
+          Digital IC designer working on energy-efficient AI hardware —
+          from stochastic neural accelerators and EDA tooling to the RTL data path
+          and memory subsystem of a CNN inference ASIC.
+        </p>
+        <div class="hero-links">
+          <a class="btn solid" href="assets/cv.pdf" target="_blank" rel="noopener">Download CV</a>
+          <a class="btn" href="#research">Research</a>
+          <a class="btn ghost" href="https://github.com/Yanxiang-ZHU" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn ghost" href="https://www.linkedin.com/in/yanxiang-zhu" target="_blank" rel="noopener">LinkedIn</a>
+          <a class="btn ghost" href="mailto:yz5479@columbia.edu">Email</a>
         </div>
-    </header>
-    <main>
-        <section id="hero">
-            <div id="hero-bg-gradient"></div>
-            <svg id="hero-bg-svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                <defs>
-                    <linearGradient id="heroGradient2" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#7fd0ff"/>
-                        <stop offset="100%" stop-color="#e6f0ff"/>
-                    </linearGradient>
-                </defs>
-                <ellipse cx="720" cy="120" rx="650" ry="110" fill="url(#heroGradient2)" fill-opacity="0.45"/>
-                <ellipse cx="900" cy="200" rx="320" ry="60" fill="#b3e0ff" fill-opacity="0.18"/>
-                <ellipse cx="400" cy="180" rx="250" ry="50" fill="#00c6ff" fill-opacity="0.10"/>
-            </svg>
-            <div id="hero-content">
-                <img src="photo.jpg" alt="照片">
-                <h1 data-i18n="name"></h1>
-                <p data-i18n="tagline"></p>
-            </div>
-        </section>
-        <section id="about">
-            <h2 data-i18n="about"></h2>
-            <ul>
-                <li data-i18n="bio1"></li>
-                <li data-i18n="bio2"></li>
-                <li data-i18n="bio3"></li>
-            </ul>
-        </section>
-        <section id="education">
-            <h2 data-i18n="education"></h2>
-            <ul>
-                <li data-i18n="education1"></li>
-                <li data-i18n="education2"></li>
-                <li data-i18n="education3"></li>
-                <li data-i18n="education4"></li>
-                <li data-i18n="education5"></li>
-            </ul>
-        </section>
-        <section id="research">
-            <h2 data-i18n="research"></h2>
-            <div class="research-flex">
-                <div class="research-card">
-                    <h3><span style="margin-right:8px;">🔬</span><span data-i18n="research_interests_title"></span></h3>
-                    <ul class="research-list">
-                        <li data-i18n="interest1"></li>
-                        <li data-i18n="interest2"></li>
-                        <li data-i18n="interest3"></li>
-                        <li data-i18n="interest4"></li>
-                    </ul>
-                </div>
-                <div class="research-card">
-                    <h3><span style="margin-right:8px;">🧪</span><span data-i18n="current_research_title"></span></h3>
-                    <div class="research-group">
-                        <div class="research-topic" data-i18n="current_research_project"></div>
-                        <div class="research-desc" data-i18n="current_research_desc"></div>
-                        <div class="research-supervisor"><span data-i18n="supervisor"></span></div>
-                        <div class="research-link"><span data-i18n="project_github"></span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <section id="projects">
-            <h2 data-i18n="projects"></h2>
-            <div class="projects-flex">
-                <div class="project-card">
-                    <div class="project-icon">🔊</div>
-                    <h4 data-i18n="project_ic_design"></h4>
-                    <a class="project-link" href="projects.html#ic-design" target="_blank" data-i18n="project_ic_design"></a>
-                </div>
-                <div class="project-card">
-                    <div class="project-icon">🛠️</div>
-                    <h4 data-i18n="project_eda"></h4>
-                    <a class="project-link" href="projects.html#eda" target="_blank" data-i18n="project_eda"></a>
-                </div>
-                <div class="project-card">
-                    <div class="project-icon">⚡</div>
-                    <h4 data-i18n="project_fpga"></h4>
-                    <a class="project-link" href="projects.html#fpga" target="_blank" data-i18n="project_fpga"></a>
-                </div>
-                <div class="project-card">
-                    <div class="project-icon">💻</div>
-                    <h4 data-i18n="project_others"></h4>
-                    <a class="project-link" href="projects.html#others" target="_blank" data-i18n="project_others"></a>
-                </div>
-            </div>
-        </section>
-        <section id="skills">
-            <h2 data-i18n="skills"></h2>
-            <div class="skills-flex">
-                <div class="skills-card">
-                    <h3><span style="margin-right:8px;">💻</span><span data-i18n="dev_ability_title"></span></h3>
-                    <div class="skills-group">
-                        <div class="skills-subgroup">
-                            <div class="skills-subtitle" data-i18n="coding_ability"></div>
-                            <ul>
-                                <li>
-                                    <li>
-                                    <span data-i18n="hardware_lang1"></span>
-                                    </li>
-                                    <li>
-                                    <span class="skill-tag master" data-i18n="proficient"></span>
-                                    <span data-i18n="hardware_lang2"></span>
-                                    </li>
-                                </li>
-                                <li>
-                                    <li>
-                                    <span data-i18n="high_level_lang1"></span>
-                                    </li>
-                                    <li>
-                                    <span class="skill-tag master" data-i18n="proficient"></span>
-                                    <span data-i18n="high_level_lang2"></span>
-                                    </li>
-                                    <li>
-                                    <span class="skill-tag good" data-i18n="skilled"></span>
-                                    <span data-i18n="high_level_lang3"></span>
-                                    </li>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="skills-subgroup">
-                            <div class="skills-subtitle" data-i18n="eda_tools"></div>
-                            <ul>
-                                <li data-i18n="quartus"></li>
-                                <li data-i18n="vivado"></li>
-                                <li data-i18n="modelsim"></li>
-                                <li data-i18n="synopsys"></li>
-                                <li data-i18n="ufde_rabbit"></li>
-                            </ul>
-                        </div>
-                        <div class="skills-subgroup">
-                            <div class="skills-subtitle" data-i18n="other_tools"></div>
-                            <ul>
-                                <li data-i18n="linux"></li>
-                                <li data-i18n="pytorch"></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                <div class="skills-card">
-                    <h3><span style="margin-right:8px;">🌐</span><span data-i18n="lang_ability_title"></span></h3>
-                    <div class="skills-group">
-                        <div class="skills-subgroup">
-                            <div class="skills-subtitle" data-i18n="english"></div>
-                            <ul>
-                                <li data-i18n="ielts"></li>
-                                <li data-i18n="gre"></li>
-                                <li data-i18n="toefl"></li>
-                            </ul>
-                        </div>
-                        <div class="skills-subgroup">
-                            <div class="skills-subtitle" data-i18n="spanish"></div>
-                            <ul>
-                                <li data-i18n="spanish_course"></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <section id="achievements">
-            <h2 data-i18n="achievements"></h2>
-            <p data-i18n="achievements_desc"></p>
-            <a href="awards.html" class="awards-btn" data-i18n="awards_link"></a>
-        </section>
-        <section id="student-social">
-            <h2 data-i18n="student_social"></h2>
-            <div class="skills-flex">
-                <div class="skills-card">
-                    <h3 data-i18n="student_work_title"></h3>
-                    <p data-i18n="student_work_intro"></p>
-                    <a href="student_work.html" class="detail-link" data-i18n="student_work_detail" target="_blank"></a>
-                </div>
-                <div class="skills-card">
-                    <h3 data-i18n="social_activities_title"></h3>
-                    <p data-i18n="social_activities_intro"></p>
-                    <a href="social_activities.html" class="detail-link" data-i18n="social_activities_detail" target="_blank"></a>
-                </div>
-            </div>
-        </section>
-        <section id="contact">
-            <h2 data-i18n="contact"></h2>
-            <p data-i18n="phone"></p>
-            <p data-i18n="email"></p>
-            <p data-i18n="linkedin"></p>
-            <p data-i18n="github"></p>
-        </section>
-    </main>
-    <footer>
-        <p data-i18n="footer"></p>
-    </footer>
-    <script>
-        const translations = {
-            en: {
-                name: "Yanxiang Zhu",
-                tagline: "Undergraduate Student in Microelectronics",
-                about: "About Me",
-                bio1: "Present Location: Shanghai, China",
-                bio2: "Date of Birth: 2004/08/06",
-                bio3: "I am an undergraduate student majoring in Microelectronics at Fudan University, with a focus on digital IC design and FPGA acceleration. My academic and research interests lie in advancing integrated circuit technologies and hardware optimization for cutting-edge applications.",
-                education: "Education",
-                education1: "Fudan University - School of Microelectronics (2022.9 - 2026.6)",
-                education2: "University of Hong Kong (Exchange) (2024.8 - 2024.12)",
-                education3: "University of Texas at Austin (Exchange: Engineering Physics Program) (2023.7 - 2023.8)",
-                education4: "Nanjing Normal University Affiliated Middle School (2019.9 - 2022.6)",
-                education5: "Nanjing Normal University Affiliated Shuren Middle School (2016.9 - 2019.6)",
-                research: "Research",
-                research_interests_title: "Research Interests",
-                interest1: "Digital integrated circuits and system-level optimization",
-                interest2: "FPGA-based hardware acceleration and neural network inference",
-                interest3: "EDA automation tools and high-level synthesis (HLS)",
-                interest4: "Neuromorphic computing and randomized neural architectures",
-                current_research_title: "Current Research",
-                current_research_project: "FPGA Acceleration of Randomized Neural Networks (2023.9 - 2025.12)",
-                current_research_desc: "National Natural Science Foundation project. Paper submission planned for December 2025. (Detailed introduction to be added)",
-                supervisor: "Supervisor: Prof. Jiang Xiao (Fudan University)",
-                project_github: "Project GitHub: [To be organized]",
-                projects: "Projects",
-                project_ic_design: "ADDA Projects",
-                project_eda: "EDA Projects",
-                project_fpga: "FPGA Projects",
-                project_others: "Other Projects",
-                skills: "Skills",
-                dev_ability_title: "Development Ability",
-                coding_ability: "Coding Skills",
-                hardware_lang1: "Hardware Languages:",
-                hardware_lang2: "Verilog, VHDL",
-                high_level_lang1: "High-level Languages:",
-                high_level_lang2: "Python, C",
-                high_level_lang3: "C++, MATLAB",
-                eda_tools: "EDA Tools",
-                quartus: "Quartus II (with Altera DE2 board)",
-                vivado: "Vivado (with Xilinx XC7A35T & XC7A200T boards)",
-                modelsim: "ModelSim",
-                synopsys: "Synopsys DC (Design Compiler)",
-                ufde_rabbit: "Tested FUDAN EDA tool UFDE+ and board tool Rabbit",
-                other_tools: "Other Tools & Frameworks",
-                linux: "Proficient in Linux systems",
-                pytorch: "Proficient in AI frameworks such as PyTorch",
-                lang_ability_title: "Language Ability",
-                english: "English:",
-                ielts: "IELTS 7.0 (Listening: 7.5, Reading: 8.5, Writing: 6.5, Speaking: 6.0)",
-                gre: "GRE [to be added after exam]",
-                toefl: "TOEFL [To be added after exam]",
-                spanish: "Spanish:",
-                spanish_course: "Completed Fudan University Spanish course, planning to take DELE A2 in 2026",
-                proficient: "Proficient",
-                skilled: "Skilled",
-                achievements: "Achievements",
-                achievements_desc: "Recognized for academic excellence, research contributions, and extracurricular leadership.",
-                awards_link: "View Detailed Awards",
-                contact: "Contact",
-                phone: "Phone & WhatsApp: +86 186 5282 9333",
-                email: "Email: m18652829333@163.com / 22307130073@m.fudan.edu.cn",
-                linkedin: "LinkedIn: www.linkedin.com/in/yanxiang-zhu",
-                github: "GitHub: https://github.com/Yanxiang-ZHU",
-                footer: "Made by Yanxiang Zhu · © 2025",
-                student_social: "Work & Activities",
-                student_work_title: "Student Work Experience",
-                student_work_intro: "Actively involved in student union and class affairs, organizing events and promoting academic engagement.",
-                student_work_detail: "See details of student work",
-                social_activities_title: "Social Activities & Volunteering",
-                social_activities_intro: "Participated in various outreach and volunteer activities, contributing to society and personal growth.",
-                social_activities_detail: "See details of social activities"
-            },
-            zh: {
-                name: "祝彦翔",
-                tagline: "微电子本科生",
-                about: "关于我",
-                bio1:"现居地：中国上海",
-                bio2:"出生日期：2004/08/06",
-                bio3: "我是复旦大学微电子学院的本科生，主修微电子，专注于数字IC设计与FPGA加速。我的学术与研究兴趣在于推动集成电路技术的发展以及尖端应用的硬件优化。",
-                education: "教育经历",
-                education1: "复旦大学 - 微电子学院 (2022.9 - 2026.6)",
-                education2: "香港大学(交换) (2024.8 - 2024.12)",
-                education3: "美国得州大学奥斯汀分校(交换, 工程物理项目) (2023.7 - 2023.8)",
-                education4: "南京师范大学附属中学 (2019.9 - 2022.6)",
-                education5: "南京师大附中树人中学 (2016.9 - 2019.6)",
-                research: "科研",
-                research_interests_title: "科研兴趣",
-                interest1: "数字集成电路与系统级优化",
-                interest2: "基于FPGA的硬件加速与神经网络推理",
-                interest3: "EDA自动化工具与高层次综合（HLS）",
-                interest4: "神经形态计算与随机神经架构",
-                current_research_title: "科研情况",
-                current_research_project: "随机序列神经网络的FPGA加速实现（2023.9~2025.12）",
-                current_research_desc: "国家自然科学基金项目，预计2025年12月投稿论文。（详细简介待补充）",
-                supervisor: "指导老师：肖江（复旦大学教授）",
-                project_github: "项目GitHub网站：【待整理，还没搞】",
-                projects: "项目经历",
-                project_ic_design: "ADDA方向项目",
-                project_eda: "EDA方向项目",
-                project_fpga: "FPGA方向项目",
-                project_others: "其他项目",
-                skills: "技能",
-                dev_ability_title: "开发能力",
-                coding_ability: "代码能力",
-                hardware_lang1: "硬件语言：",
-                hardware_lang2: "Verilog, VHDL",
-                high_level_lang1: "高层次语言：",
-                high_level_lang2: "Python, C",
-                high_level_lang3: "C++, MATLAB",
-                eda_tools: "EDA工具",
-                quartus: "Quartus II（配合Altera DE2开发板开发）",
-                vivado: "Vivado（配合Xilinx XC7A35T & XC7A200T开发）",
-                modelsim: "ModelSim",
-                synopsys: "Synopsys DC (Design Compiler)",
-                ufde_rabbit: "参与测试复旦EDA工具UFDE+及上板工具Rabbit",
-                other_tools: "其它工具及架构",
-                linux: "熟练应用Linux系统",
-                pytorch: "熟练使用AI框架如PyTorch",
-                lang_ability_title: "语言能力",
-                english: "英语：",
-                ielts: "IELTS 7.0（Listening: 7.5, Reading: 8.5, Writing: 6.5, Speaking: 6.0）",
-                gre: "GRE【等考完再加上】",
-                toefl: "TOEFL【等考完再加上】",
-                spanish: "西班牙语：",
-                spanish_course: "完成复旦大学西班牙语通识课程，计划2026年考DELE A2",
-                proficient: "精通",
-                skilled: "熟练",
-                achievements: "成就",
-                achievements_desc: "因学术卓越、科研贡献及课外领导力而受到表彰。",
-                awards_link: "查看详细奖项",
-                contact: "联系方式",
-                phone: "电话 & 微信: 186 5282 9333",
-                email: "邮箱: m18652829333@163.com / 22307130073@m.fudan.edu.cn",
-                linkedin: "领英: www.linkedin.com/in/yanxiang-zhu",
-                github: "GitHub: https://github.com/Yanxiang-ZHU",
-                footer: "祝彦翔 · © 2025",
-                student_social: "学生工作与社会活动",
-                student_work_title: "学生工作经历",
-                student_work_intro: "积极参与学生会与班级事务，组织活动，促进学业交流。",
-                student_work_detail: "查看学生工作详情",
-                social_activities_title: "社交活动与志愿服务",
-                social_activities_intro: "参与多项社会实践与志愿活动，服务社会，提升自我。",
-                social_activities_detail: "查看社会活动详情"
-            }
-        };
+      </div>
+    </div>
+  </section>
 
-        function switchLanguage(lang) {
-            document.querySelectorAll('[data-i18n]').forEach(element => {
-                const key = element.getAttribute('data-i18n');
-                if (translations[lang][key]) {
-                    element.textContent = translations[lang][key];
-                }
-            });
-            document.querySelectorAll('.language-switcher button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent === lang.toUpperCase()) {
-                    btn.classList.add('active');
-                }
-            });
-            localStorage.setItem('lang', lang);
-        }
+  <!-- ABOUT -->
+  <section id="about" class="soft">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">About</div>
+        <h2>Bridging AI algorithms and silicon</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="prose">
+        <p>
+          I am a first-year M.S. student in Electrical Engineering at
+          <strong>Columbia University</strong>, working with
+          <a href="https://zishenwan.github.io/" target="_blank" rel="noopener">Prof. Zishen Wan</a>
+                    in the Wan Lab on hardware-software co-design for world action models (world models
+                    and vision-language-action models). My work sits where
+          digital IC design meets AI systems: as an undergraduate at
+          <strong>Fudan University</strong> I built stochastic neural network accelerators,
+          RISC-V processors and EDA tools, and during my internship at
+          <strong>Mammoth Supercomputing Semiconductor</strong> I designed the top-level
+          architecture and RTL compute data path of a CNN super-resolution inference ASIC.
+        </p>
+        <p>
+          I enjoy problems that cross the hardware-software boundary — profiling models,
+          designing the memory hierarchy they run on, and closing the loop with FPGA-based
+          pre-silicon validation. Outside the lab you will find me on the track: I run the
+          400 meters and won a gold and a silver medal with the Fudan 4×400m relay team.
+        </p>
+      </div>
+    </div>
+  </section>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const lang = localStorage.getItem('lang') || 'zh';
-            switchLanguage(lang);
+  <!-- NEWS -->
+  <section id="news">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">Updates</div>
+        <h2>News</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="news-list">
+        <div class="news-item">
+          <span class="date">Aug 2026</span>
+                    <p>Joined the Wan Lab at Columbia as a research assistant, working with Prof. Zishen Wan on hardware acceleration for world action models.</p>
+        </div>
+        <div class="news-item">
+          <span class="date">Sep 2026</span>
+          <p>Started my M.S. in Electrical Engineering at Columbia University, New York.</p>
+        </div>
+        <div class="news-item">
+          <span class="date">Jul 2026</span>
+          <p>Completed my digital IC design internship with the AI accelerator team at Mammoth Supercomputing Semiconductor in Shanghai.</p>
+        </div>
+        <div class="news-item">
+          <span class="date">Jun 2026</span>
+          <p>Graduated from Fudan University with a B.S. in Microelectronics, overall score 92/100.</p>
+        </div>
+        <div class="news-item">
+          <span class="date">Aug 2024</span>
+          <p>Spent a semester as a visiting exchange student at the University of Hong Kong.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESEARCH -->
+  <section id="research" class="soft">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">What I work on</div>
+        <h2>Research</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <h3>Hardware-Software Co-Acceleration for World Action Models</h3>
+            <div class="where">Research Assistant · Wan Lab, Columbia University · advised by Prof. Zishen Wan</div>
+          </div>
+          <div class="when">Aug 2026 — Present</div>
+        </div>
+        <ul>
+          <li>Built a modular world action model testbed on a 2D embodied-control benchmark, with interchangeable model architectures so different designs can be profiled and accelerated under one unified workflow.</li>
+                    <li>Profiling end-to-end inference latency across the compute stack to find where time is spent and which operators and memory transfers deserve dedicated hardware support.</li>
+        </ul>
+        <div class="links">
+          <a href="https://github.com/Yanxiang-ZHU/mini-WAM" target="_blank" rel="noopener">Code</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <h3>Full-Stack Simulation Framework for Intelligent Control Systems</h3>
+            <div class="where">Research Assistant · Fudan University · advised by Prof. Jun Han</div>
+          </div>
+          <div class="when">Jun 2025 — Apr 2026</div>
+        </div>
+        <ul>
+          <li>Extended UC Berkeley's RoS&#233; framework to a customized SoC platform on a Xilinx Alveo V80 FPGA, redesigning host-FPGA communication and the system software stack.</li>
+          <li>Enabled closed-loop pre-silicon co-simulation with AirSim and system-level validation of custom accelerator IP for UAV workloads.</li>
+        </ul>
+        <div class="links">
+          <a href="https://github.com/Yanxiang-ZHU/UAV" target="_blank" rel="noopener">Code</a>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <h3>Stochastic Computing Neural Network Accelerator</h3>
+            <div class="where">Undergraduate Researcher (project lead) · Fudan University · advised by Prof. Jiang Xiao</div>
+          </div>
+          <div class="when">Sep 2023 — Apr 2026</div>
+        </div>
+        <ul>
+          <li>Developed stochastic-sequence neural networks and bit-stream operators that replace multiply-accumulate operations with lightweight bit-wise computation.</li>
+          <li>Optimized stochastic encoding, nonlinear operators and memory organization for FPGA deployment, reaching accuracy within one percentage point of floating-point baselines without any floating-point arithmetic.</li>
+        </ul>
+        <div class="links">
+          <a href="https://github.com/Yanxiang-ZHU/Stochastic-Computing-NN-Accelerator" target="_blank" rel="noopener">Code</a>
+          <a href="https://github.com/Yanxiang-ZHU/High-Precision-Majority-Gate" target="_blank" rel="noopener">Majority gate library</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">Industry</div>
+        <h2>Experience</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <h3>Digital IC Design Intern — AI Accelerator Team</h3>
+            <div class="where">Mammoth Supercomputing Semiconductor Co., Ltd. · Shanghai, China</div>
+          </div>
+          <div class="when">Apr 2026 — Jul 2026</div>
+        </div>
+        <ul>
+          <li>Designed the top-level architecture and RTL compute data path for a CNN super-resolution inference ASIC, integrating a DDR4 controller, 256-bit AXI interconnect, on-chip SRAM, convolution acceleration and host interfaces into a complete SoC.</li>
+                    <li>Designed the 128KB dual-port on-chip cache with ping-pong buffering to hide memory latency, and implemented hardware-controlled sliding-window dataflow for systolic-array convolution.</li>
+                    <li>Validated super-resolution workloads on FPGA ahead of tape-out through a TVM-based compiler toolchain, resolving instruction, memory and dataflow issues with cycle-level waveform debugging.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROJECTS -->
+  <section id="projects" class="soft">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">Selected work</div>
+        <h2>Projects</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="filters" id="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="eda">EDA &amp; Algorithms</button>
+        <button class="filter-btn" data-filter="fpga">Digital &amp; FPGA</button>
+        <button class="filter-btn" data-filter="ai">AI &amp; Modeling</button>
+        <button class="filter-btn" data-filter="ms">Mixed-Signal</button>
+      </div>
+
+      <div class="cards" id="cards">
+
+        <div class="card" data-cat="eda">
+          <div class="card-img"><img loading="lazy" src="assets/projects/global-routing.png" alt="A* global routing result on a grid"></div>
+          <div class="card-body">
+            <div class="card-cat">EDA &amp; Algorithms</div>
+            <h3>Global Routing Based on A*</h3>
+            <p>A grid-based global router that connects every pin with near-minimal wirelength using multi-source multi-target A* search and an admissible Manhattan heuristic. The route grows iteratively from the connected set to the nearest remaining pin while the grid is updated dynamically.</p>
+            <div class="tags"><span class="tag">A* search</span><span class="tag">Heuristic design</span><span class="tag">Python</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/EDA-Design" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="eda">
+          <div class="card-img"><img loading="lazy" src="assets/projects/mixed-signal-sim.png" alt="Mixed-signal simulation waveform"></div>
+          <div class="card-body">
+            <div class="card-cat">EDA &amp; Algorithms</div>
+            <h3>Mixed-Signal Simulation Accelerator</h3>
+            <p>An event-driven simulator that models analog, digital and mixed events on a shared timeline, with a time-ordered event queue and strict interaction rules. Parallel versions add rollback-based A/D synchronization and dynamic thread allocation to exploit multi-core execution.</p>
+            <div class="tags"><span class="tag">Event-driven</span><span class="tag">Parallelism</span><span class="tag">C</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/EDA-Design" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="eda">
+          <div class="card-banner">From C to RTL</div>
+          <div class="card-body">
+            <div class="card-cat">EDA &amp; Algorithms</div>
+            <h3>High-Level Synthesis of C Code</h3>
+            <p>Translated a doubly-nested dot-product kernel into a complete RTL design with datapath, controller and SRAM under strict resource limits. A minimal single-multiplier build computes in about 11n cycles and a two-way unrolled build cuts this to about 5.5n cycles per n data points.</p>
+            <div class="tags"><span class="tag">Scheduling</span><span class="tag">Datapath design</span><span class="tag">Verilog</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Advanced-Digital-IC-Design" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="eda">
+          <div class="card-banner">Balance &amp; Rewrite</div>
+          <div class="card-body">
+            <div class="card-cat">EDA &amp; Algorithms</div>
+            <h3>AIG Circuit Balance and Rewrite Optimization</h3>
+            <p>Implemented two classic logic-synthesis optimizations on the Mockturtle framework. Balance restructures k-feasible cuts through SOP rebalancing to reduce logic depth, while rewrite swaps subgraphs for smaller NPN-resynthesized equivalents to cut area — on adder benchmarks balance trimmed depth from 255 to 171 levels.</p>
+            <div class="tags"><span class="tag">Logic synthesis</span><span class="tag">Mockturtle</span><span class="tag">C++</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/EDA-Design" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="eda">
+          <div class="card-banner">SPICE Toolkit</div>
+          <div class="card-body">
+            <div class="card-cat">EDA &amp; Algorithms</div>
+            <h3>Random Netlist Generator and Parser</h3>
+            <p>A paired SPICE netlist generator and parser that cross-validate each other on large synthetic circuit datasets. The parser models circuits as graphs, uses DFS to extract connected components, and flags shorts, open circuits and floating devices — with a FIX mode that emits cleaned netlists automatically.</p>
+            <div class="tags"><span class="tag">Graph algorithms</span><span class="tag">SPICE</span><span class="tag">C</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/EDA-Design" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="fpga" style="order:-1">
+          <div class="card-img"><img loading="lazy" src="assets/projects/riscv-cpu.png" alt="Datapath of the five-stage pipelined RISC-V CPU"></div>
+          <div class="card-body">
+            <div class="card-cat">Digital &amp; FPGA</div>
+            <h3>Five-Stage Pipelined RISC-V CPU</h3>
+            <p>A full RV32I processor covering the entire base instruction set, with a five-stage pipeline, forwarding, hazard handling and a BHT+BTB branch predictor, organized as cleanly separated modules from register file to control unit. Validated with Dhrystone and real-time UART control on FPGA.</p>
+            <div class="tags"><span class="tag">RV32I</span><span class="tag">Pipeline</span><span class="tag">FPGA</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Complex-CPU-Design-Based-on-RISC-V" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="fpga">
+          <div class="card-img"><img loading="lazy" src="assets/projects/fpga-mario.png" alt="Super Mario game running on FPGA"></div>
+          <div class="card-body">
+            <div class="card-cat">Digital &amp; FPGA</div>
+            <h3>Super Mario on FPGA</h3>
+            <p>A complete side-scrolling game engine rendered over VGA with PS/2 mouse input, 600 Hz physics simulation, collision detection and dual-port-RAM map streaming with instant level restore. Includes bitmap score rendering and a three-layer music player for the theme song.</p>
+            <div class="tags"><span class="tag">VGA</span><span class="tag">Game physics</span><span class="tag">VHDL</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/FPGA_MARIO" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="fpga">
+          <div class="card-banner">Whack-a-Mole</div>
+          <div class="card-body">
+            <div class="card-cat">Digital &amp; FPGA</div>
+            <h3>Whack-a-Mole Game Machine</h3>
+            <p>An arcade-style game on a Xilinx Artix-7 with LFSR-generated moles, matrix-keyboard hammers, seven-segment scoring, persistent high score on a 1602 LCD and PWM sound effects. Synthesized at 50 MHz with no setup or hold violations and verified in-system with an integrated logic analyzer.</p>
+            <div class="tags"><span class="tag">FSM design</span><span class="tag">Peripherals</span><span class="tag">Vivado</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Whack-a-Mole-GameMachine" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="ms">
+          <div class="card-img"><img loading="lazy" src="assets/projects/sar-adc.png" alt="Static and dynamic characterization of the pipelined SAR ADC"></div>
+          <div class="card-body">
+            <div class="card-cat">Mixed-Signal</div>
+            <h3>Time-Interleaved Pipelined SAR ADC</h3>
+            <p>A MATLAB behavioral model of a 12-bit, 4-channel time-interleaved pipelined SAR ADC sampling at 2 GS/s, with a full non-ideal error model covering timing, offset and noise effects. Characterized DNL, INL, SINAD, ENOB, SFDR and THD under Hann and Blackman-Harris windows.</p>
+            <div class="tags"><span class="tag">Data converters</span><span class="tag">Behavioral modeling</span><span class="tag">MATLAB</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Ti_Pipielined_SARADC_Design" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="ms">
+          <div class="card-img"><img loading="lazy" src="assets/projects/adc-audio.png" alt="Audio waveforms of the ADC decoder chain"></div>
+          <div class="card-body">
+            <div class="card-cat">Mixed-Signal</div>
+            <h3>ADC Audio Decoder</h3>
+            <p>A DSP chain on a Basys3 board that recovers a hidden digital message from noisy audio: moving-average filtering, zero-crossing frequency estimation, FSM-based symbol decoding and UART transmission of the recovered ASCII text.</p>
+            <div class="tags"><span class="tag">DSP</span><span class="tag">FSM</span><span class="tag">VHDL</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/ADC-Decoder" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="ai">
+          <div class="card-banner">Fine-Tuned Qwen2.5</div>
+          <div class="card-body">
+            <div class="card-cat">AI &amp; Modeling</div>
+            <h3>Olympics Video Analysis</h3>
+            <p>Fine-tuned a vision-language model to analyze Olympic broadcast video on a single 6GB GPU. Built the full data pipeline from a Selenium crawler that extracts m3u8 streams to FFmpeg merging and frame sampling, with YOLO, Mask R-CNN and DeepSORT grounding the model's answers.</p>
+            <div class="tags"><span class="tag">VLM fine-tuning</span><span class="tag">Video pipeline</span><span class="tag">PyTorch</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Olympics-Video-Analysis" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="ai">
+          <div class="card-banner">Science Q&amp;A</div>
+          <div class="card-body">
+            <div class="card-cat">AI &amp; Modeling</div>
+            <h3>Science Q&amp;A System with BERT Retrieval</h3>
+            <p>A question-answering system over a knowledge base built from Nature articles, Kaggle posts, arXiv abstracts and generated Q&amp;A pairs. Dual embeddings (GloVe for abstracts, TF-IDF for Q&amp;A), KNN topic classification and TextRank summarization feed a BERT reader.</p>
+            <div class="tags"><span class="tag">Retrieval</span><span class="tag">NLP</span><span class="tag">BERT</span></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="ai">
+          <div class="card-banner">Gate-Entry Sensing</div>
+          <div class="card-body">
+            <div class="card-cat">AI &amp; Modeling</div>
+            <h3>Multi-channel Fast Recognition Algorithm</h3>
+            <p>A real-time gate-entry recognition algorithm built for single-core embedded platforms. Ellipse-geometry activation zones avoid explicit coordinate solving, a three-anchor extension disambiguates adjacent channels, and concentric prediction zones cut ranging queries for distant tags.</p>
+            <div class="tags"><span class="tag">Computational geometry</span><span class="tag">Embedded</span><span class="tag">C++</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Multi-channel-Fast-Recognition-Algorithm" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+        <div class="card" data-cat="ai">
+          <div class="card-img"><img loading="lazy" src="assets/projects/marine-survey.png" alt="Seabed terrain and survey line planning"></div>
+          <div class="card-body">
+            <div class="card-cat">AI &amp; Modeling</div>
+            <h3>Marine Survey Lines Based on Multi-beam Technology</h3>
+            <p>Survey-line planning for multi-beam bathymetry, built for the 2023 CUMCM competition. Derived 2D and 3D coverage models from transducer geometry, then planned lines over real single-beam seabed data with micro-grid differential analysis — keeping the missed area at 0.54%.</p>
+            <div class="tags"><span class="tag">Mathematical modeling</span><span class="tag">Optimization</span><span class="tag">MATLAB</span></div>
+            <div class="card-links"><a href="https://github.com/Yanxiang-ZHU/Marine-Survey-Lines-Based-on-Multi-beam-Technology" target="_blank" rel="noopener">Code</a></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">Toolkit</div>
+        <h2>Skills</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="skill-grid">
+        <div class="skill-col">
+          <h3>Hardware</h3>
+          <ul>
+            <li>Verilog, VHDL, Chisel</li>
+            <li>RTL design and FPGA prototyping</li>
+            <li>Pipelined processors and memory subsystems</li>
+            <li>Static timing analysis and waveform debug</li>
+          </ul>
+        </div>
+        <div class="skill-col">
+          <h3>Software</h3>
+          <ul>
+            <li>Python, C, C++, MATLAB</li>
+            <li>PyTorch, ONNX, model fine-tuning</li>
+            <li>Linux system software and scripting</li>
+          </ul>
+        </div>
+        <div class="skill-col">
+          <h3>Tools &amp; Platforms</h3>
+          <ul>
+            <li>Vivado, ModelSim, Synopsys Design Compiler, IC Compiler</li>
+            <li>FireSim, PetaLinux, Xilinx Alveo V80</li>
+            <li>TVM compiler toolchain</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section id="education" class="soft">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">Background</div>
+        <h2>Education</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <h3>Columbia University</h3>
+            <div class="where">M.S. in Electrical Engineering · New York, NY</div>
+          </div>
+          <div class="when">Sep 2026 — Dec 2027</div>
+        </div>
+        <ul>
+          <li>Current coursework: Digital VLSI Circuits, Formal Verification, Analog Electronic Circuits.</li>
+        </ul>
+      </div>
+
+      <div class="entry">
+        <div class="entry-top">
+          <div>
+            <h3>Fudan University</h3>
+            <div class="where">B.S. in Microelectronics · Shanghai, China</div>
+          </div>
+          <div class="when">Sep 2022 — Jun 2026</div>
+        </div>
+        <ul>
+          <li>Overall score 92/100.</li>
+          <li>Coursework: System on Chip, Digital Integrated Circuit, VLSI Technology, ASIC Design Methodology.</li>
+          <li>Semester exchange at the University of Hong Kong, Aug 2024 — Dec 2024; summer exchange at the University of Texas at Austin, Jul 2023 — Aug 2023.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- HONORS -->
+  <section id="honors">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="sec-label">Recognition</div>
+        <h2>Honors &amp; Beyond the Lab</h2>
+        <div class="rule"></div>
+      </div>
+      <div class="honor-grid">
+        <div class="honor-block">
+          <h3>Scholarships &amp; Academic Honors</h3>
+          <ul>
+            <li><strong>Fudan University First-Class Scholarship</strong>, top 3% of students</li>
+            <li><strong>NITORI International Scholarship</strong></li>
+            <li><strong>Fung Scholarship</strong>, Fung Scholar</li>
+            <li><strong>Rongchang — Fudan Chip Innovation Scholarship</strong>, study abroad award</li>
+            </ul>
+        </div>
+        <div class="honor-block">
+          <h3>Leadership &amp; Service</h3>
+          <ul>
+            <li><strong>Head of the Secretariat</strong>, Student Union of the School of Microelectronics<span class="yr">2023 — 2024</span><br>Organized 10+ events with 500+ participants and drafted 5 internal governance documents that streamlined how the union runs.</li>
+            <li><strong>Outstanding League Member</strong>, Fudan University</li>
+            <li><strong>Outstanding Volunteer</strong>, Fudan University<br>STEM teaching support in Yunnan, alumni visits and high school outreach — the outreach program ranked top-10 in the university.</li>
+          </ul>
+        </div>
+        <div class="honor-block">
+          <h3>Athletics</h3>
+          <ul>
+            <li><strong>Gold medal</strong>, 4×400m relay, Fudan University Sports Meet<span class="yr">2024</span></li>
+            <li><strong>Silver medal</strong>, 4×400m relay, Fudan University Sports Meet<span class="yr">2025</span></li>
+            <li><strong>Fifth place</strong>, 400m, Fudan University Sports Meet<span class="yr">2024</span></li>
+          </ul>
+        </div>
+        <div class="honor-block">
+          <h3>Languages</h3>
+          <ul>
+            <li><strong>Chinese</strong>, native</li>
+            <li><strong>English</strong>, professional working proficiency (IELTS 7.0)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="contact">
+    <div class="wrap">
+      <div class="sec-label">Get in touch</div>
+      <h2>Contact</h2>
+      <div class="rule"></div>
+      <p>
+              I am currently open to research collaborations and 2027 internship opportunities,
+              with full-time roles in digital IC design and AI hardware starting in 2028 after graduation.
+              I am also exploring Ph.D. opportunities in computer architecture and AI hardware.
+              The fastest way to reach me is email.
+            </p>
+      <div class="contact-links">
+        <a href="mailto:yz5479@columbia.edu">yz5479@columbia.edu</a>
+        <a href="https://github.com/Yanxiang-ZHU" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/in/yanxiang-zhu" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="assets/cv.pdf" target="_blank" rel="noopener">CV (PDF)</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    © 2026 Yanxiang Zhu · Built and maintained by hand · New York / Shanghai
+  </div>
+</footer>
+
+<script>
+  // Mobile menu toggle
+  const menuBtn = document.getElementById('menu-btn');
+  menuBtn.addEventListener('click', () => {
+    const nav = document.getElementById('nav');
+    const open = nav.classList.toggle('open');
+    menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  // Project filtering
+  const filterBtns = document.querySelectorAll('.filter-btn');
+  const cards = document.querySelectorAll('#cards .card');
+  filterBtns.forEach(btn => {
+    btn.setAttribute('aria-pressed', btn.classList.contains('active') ? 'true' : 'false');
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-pressed', 'true');
+      const f = btn.dataset.filter;
+      cards.forEach(card => {
+        card.classList.toggle('hidden', f !== 'all' && card.dataset.cat !== f);
+      });
+    });
+  });
+
+  // Scroll-spy nav highlight
+  const sections = document.querySelectorAll('main section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id);
         });
-    </script>
+      }
+    });
+  }, { rootMargin: '-25% 0px -65% 0px' });
+  sections.forEach(s => spy.observe(s));
+
+  // Close mobile menu after tapping a link
+  document.querySelectorAll('nav a').forEach(a => {
+    a.addEventListener('click', () => document.getElementById('nav').classList.remove('open'));
+  });
+</script>
 </body>
 </html>
